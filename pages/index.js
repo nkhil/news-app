@@ -1,8 +1,11 @@
 import Head from 'next/head'
-import Image from 'next/image'
 import styles from '../styles/Home.module.css'
+import never from 'never'
 
-export default function Home() {
+const { NEWS_ENDPOINT = never('Missing NEWS_ENDPOINT env var') } = process.env
+
+export default function Home({ articles }) {
+
   return (
     <div className={styles.container}>
       <Head>
@@ -12,11 +15,17 @@ export default function Home() {
       </Head>
 
       <main className={styles.main}>
-        <h1 className={styles.title}>
+        {/* <h1 className={styles.title}>
           Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+        </h1> */}
 
-        <p className={styles.description}>
+        <ul>
+          {articles.map((article, index) => (
+            <li key={index}>{article.title} {article.source.id ? `(${article.source.id})` : ''}</li>
+          ))}
+        </ul>
+
+        {/* <p className={styles.description}>
           Get started by editing{' '}
           <code className={styles.code}>pages/index.js</code>
         </p>
@@ -51,21 +60,28 @@ export default function Home() {
               Instantly deploy your Next.js site to a public URL with Vercel.
             </p>
           </a>
-        </div>
+        </div> */}
       </main>
 
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <span className={styles.logo}>
-            <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
-          </span>
-        </a>
-      </footer>
     </div>
   )
+}
+
+// FROM: https://nextjs.org/docs/basic-features/data-fetching/incremental-static-regeneration
+// This function gets called at build time on server-side.
+// It may be called again, on a serverless function, if
+// revalidation is enabled and a new request comes in
+export async function getStaticProps() {
+  const res = await fetch(NEWS_ENDPOINT)
+  const { articles } = await res.json()
+
+  return {
+    props: {
+      articles,
+    },
+    // Next.js will attempt to re-generate the page:
+    // - When a request comes in
+    // - At most once every 10 seconds
+    revalidate: 60 * 100, // revalidate every 10 minutes
+  }
 }
